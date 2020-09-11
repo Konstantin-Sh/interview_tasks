@@ -12,14 +12,16 @@ async def handle_error(msg):
     raise web.HTTPBadRequest(reason=msg)
 
 
-async def scan_port(event_loop, address, port):
+async def scan_port(address, port):
     connect = asyncio.open_connection(address, port, loop=event_loop)
     try:
         await asyncio.wait_for(connect, timeout=10, loop=event_loop)
     except (asyncio.TimeoutError, ConnectionRefusedError):
         result = '{"port": "' + str(port) + '", "state": "close"}'
     except socket.error as msg:
-        await handle_error('socket.error ' + msg)
+        # await handle_error('socket.error ' + msg)
+        logging.error('port_scanner_srv: ' + msg)
+        raise web.HTTPBadRequest(reason=msg)
     else:
         result = '{"port": "' + str(port) + '", "state": "open"}'
     finally:
@@ -47,6 +49,7 @@ async def check_request(address, start_port, end_port):
         await handle_error('The start port is out of range')
     if not is_valid_tcp_upd_port(int(end_port)):
         await handle_error('The end port is out of range')
+#TODO check a < b
     if not await is_valid_host(address):
         await handle_error('The address or hostname wrong')
 
@@ -58,7 +61,7 @@ async def get_handler(request):
     await check_request(address, start_port, end_port)
     response = web.StreamResponse()
     response.headers['Content-Type'] = 'application/json'
-    futures = [scan_port(event_loop, address, port)
+    futures = [scan_port(address, port)
                for port in range(int(start_port), int(end_port) + 1)]
     first_element = True
     for future in asyncio.as_completed(futures):
@@ -76,6 +79,7 @@ async def get_handler(request):
 
 if __name__ == "__main__":
     event_loop = asyncio.get_event_loop()
+    event_loop.set_debug(True)
     app = web.Application()
     app.router.add_get('/{address}/{start_port}/{end_port}', get_handler)
     logging.basicConfig(level=logging.DEBUG, handlers=[SysLogHandler(address='/dev/log'), SysLogHandler()])
