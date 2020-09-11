@@ -4,7 +4,7 @@ import logging
 import aiodns
 from aiohttp import web
 from logging.handlers import SysLogHandler
-from request_checkers import is_vaild_tcp_upd_port, is_valid_ipv4_address, is_valid_ipv6_address
+from request_checkers import is_valid_tcp_upd_port, is_valid_ipv4_address, is_valid_ipv6_address
 
 
 async def handle_error(msg):
@@ -43,9 +43,9 @@ async def is_valid_host(address):
 async def check_request(address, start_port, end_port):
     if not start_port.isdecimal() or not end_port.isdecimal():
         await handle_error('The start port or end port is not a number')
-    if not is_vaild_tcp_upd_port(int(start_port)):
+    if not is_valid_tcp_upd_port(int(start_port)):
         await handle_error('The start port is out of range')
-    if not is_vaild_tcp_upd_port(int(end_port)):
+    if not is_valid_tcp_upd_port(int(end_port)):
         await handle_error('The end port is out of range')
     if not await is_valid_host(address):
         await handle_error('The address or hostname wrong')
