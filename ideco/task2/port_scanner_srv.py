@@ -5,6 +5,9 @@ from aiohttp import web
 from logging.handlers import SysLogHandler
 from request_checkers import is_vaild_tcp_upd_port, is_valid_ipv4_address, is_valid_ipv6_address
 
+async def handle_error(msg):
+    logging.error('port_scanner_srv: ' + msg)
+    raise web.HTTPBadRequest(reason=msg)
 
 async def scan_port(event_loop, address, port):
     connect = asyncio.open_connection(address, port, loop=event_loop)
@@ -13,8 +16,7 @@ async def scan_port(event_loop, address, port):
     except (asyncio.TimeoutError, ConnectionRefusedError):
         result = '{"port": "' + str(port) + '", "state": "close"}'
     except socket.error as msg:
-        logging.error('port_scanner_srv: socket.error ' + msg)
-        raise web.HTTPBadRequest(reason=msg)
+        await handle_error('socket.error ' + msg)
     else:
         result = '{"port": "' + str(port) + '", "state": "open"}'
     finally:
@@ -24,16 +26,11 @@ async def scan_port(event_loop, address, port):
 
 async def check_request(address, start_port, end_port):
     if not start_port.isdecimal() or not end_port.isdecimal():
-        logging.error('port_scanner_srv: The start port or end port is not a number')
-        raise web.HTTPBadRequest(reason='The start port or end port is not a number')
-    start_port = int(start_port)
-    end_port = int(end_port)
-    if not (0 <= start_port <= 65535):
-        logging.error('port_scanner_srv: The start port is out of range')
-        raise web.HTTPBadRequest(reason='The start port is out of range')
-    if not (0 <= end_port <= 65535):
-        logging.error('port_scanner_srv: The end port is out of range')
-        raise web.HTTPBadRequest(reason='The end port is out of range')
+        await handle_error('The start port or end port is not a number')
+    if not is_vaild_tcp_upd_port(int(start_port)):
+        await handle_error('The start port is out of range')
+    if not is_vaild_tcp_upd_port(int(end_port)):
+        await handle_error('The end port is out of range')
 
 
 async def get_handler(request):
