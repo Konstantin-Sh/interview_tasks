@@ -1,10 +1,12 @@
 import socket
 
-def is_vaild_tcp_upd_port(port):
+
+def is_valid_tcp_upd_port(port):
     if 0 <= port <= 65535:
         return True
     else:
         return False
+
 
 def is_valid_ipv4_address(address):
     try:
@@ -27,4 +29,3 @@ def is_valid_ipv6_address(address):
     except socket.error:  # not a valid address
         return False
     return True
-
