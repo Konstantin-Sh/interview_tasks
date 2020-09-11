@@ -33,7 +33,7 @@ async def is_valid_host(address):
     resolver = aiodns.DNSResolver(loop=event_loop)
     try:
         await resolver.gethostbyname(address, socket.AF_INET)
-    except:
+    except aiodns.error.DNSError:
         check_dns = False
     else:
         check_dns = True
