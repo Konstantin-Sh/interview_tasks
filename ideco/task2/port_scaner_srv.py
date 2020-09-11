@@ -1,6 +1,9 @@
-from aiohttp import web
 import asyncio
 import socket
+import logging
+from aiohttp import web
+from logging.handlers import SysLogHandler
+
 
 async def scan_port(event_loop, address, port):
     connect = asyncio.open_connection(address, port, loop=event_loop)
@@ -9,6 +12,7 @@ async def scan_port(event_loop, address, port):
     except (asyncio.TimeoutError, ConnectionRefusedError):
         result = '{"port": "' + str(port) + '", "state": "close"}'
     except socket.error as msg:
+        logging.error('port_scanner_srv: socket.error ' + msg)
         raise web.HTTPBadRequest(reason=msg)
     else:
         result = '{"port": "' + str(port) + '", "state": "open"}'
@@ -16,15 +20,20 @@ async def scan_port(event_loop, address, port):
         connect.close()
     return result
 
+
 async def check_request(address, start_port, end_port):
     if not start_port.isdecimal() or not end_port.isdecimal():
+        logging.error('port_scanner_srv: Port is not a number')
         raise web.HTTPBadRequest(reason='Port is not a number')
     start_port = int(start_port)
     end_port = int(end_port)
     if not (0 <= start_port <= 65535):
+        logging.error('port_scanner_srv: The start port is out of range')
         raise web.HTTPBadRequest(reason='The start port is out of range')
-    if not (0 <= start_port <= 65535):
+    if not (0 <= end_port <= 65535):
+        logging.error('port_scanner_srv: The end port is out of range')
         raise web.HTTPBadRequest(reason='The end port is out of range')
+
 
 async def get_handler(request):
     address = request.match_info.get('address')
@@ -51,7 +60,10 @@ async def get_handler(request):
 
 if __name__ == "__main__":
     event_loop = asyncio.get_event_loop()
-    app = web.Application(loop=event_loop)
+    app = web.Application()
     app.router.add_get('/{address}/{start_port}/{end_port}', get_handler)
-    web.run_app(app)
+    logging.basicConfig(level=logging.DEBUG, handlers=[SysLogHandler(address='/dev/log'), SysLogHandler()])
+    logging.info('port_scanner_srv: start')
+    web.run_app(app, access_log_format='port_scanner_srv: %a %t "%r" %s %b "%{Referer}i" "%{User-Agent}i"')
+    logging.info('port_scanner_srv: stop')
     event_loop.close()
