@@ -3,6 +3,7 @@ import socket
 import logging
 from aiohttp import web
 from logging.handlers import SysLogHandler
+from request_checkers import is_vaild_tcp_upd_port, is_valid_ipv4_address, is_valid_ipv6_address
 
 
 async def scan_port(event_loop, address, port):
@@ -23,8 +24,8 @@ async def scan_port(event_loop, address, port):
 
 async def check_request(address, start_port, end_port):
     if not start_port.isdecimal() or not end_port.isdecimal():
-        logging.error('port_scanner_srv: Port is not a number')
-        raise web.HTTPBadRequest(reason='Port is not a number')
+        logging.error('port_scanner_srv: The start port or end port is not a number')
+        raise web.HTTPBadRequest(reason='The start port or end port is not a number')
     start_port = int(start_port)
     end_port = int(end_port)
     if not (0 <= start_port <= 65535):
