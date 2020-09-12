@@ -88,6 +88,7 @@ if __name__ == "__main__":
 # End debug environment
     # logging.basicConfig(level=logging.INFO, handlers=[SysLogHandler(address='/dev/log'), SysLogHandler()])
     logging.info('port_scanner_srv: start')
-    web.run_app(app, access_log_format='port_scanner_srv: %a %t "%r" %s %b "%{Referer}i" "%{User-Agent}i"')
+    web.run_app(app, access_log_format='port_scanner_srv: %a %t "%r" %s %b'
+                                       ' "%{Referer}i" "%{User-Agent}i"')
     logging.info('port_scanner_srv: stop')
     event_loop.close()
