@@ -21,7 +21,7 @@ def test_is_valid_tcp_upd_port(port, result):
 
 
 @pytest.mark.parametrize(
-('address', 'result'), [
+    ('address', 'result'), [
         ('127.0.0.1', True),
         ('127.1', True),
         ('300.0.0.1', False),
