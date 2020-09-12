@@ -4,7 +4,9 @@ import logging
 import aiodns
 from aiohttp import web
 from logging.handlers import SysLogHandler
-from request_checkers import is_valid_tcp_upd_port, is_valid_ipv4_address, is_valid_ipv6_address
+from request_checkers import (is_valid_tcp_upd_port,
+                              is_valid_ipv4_address,
+                              is_valid_ipv6_address)
 
 
 async def handle_error(msg):
@@ -19,9 +21,7 @@ async def scan_port(address, port):
     except (asyncio.TimeoutError, ConnectionRefusedError):
         result = '{"port": "' + str(port) + '", "state": "close"}'
     except socket.error as msg:
-        # await handle_error('socket.error ' + msg)
-        logging.error('port_scanner_srv: ' + msg)
-        raise web.HTTPBadRequest(reason=msg)
+        await handle_error('socket.error ' + msg)
     else:
         result = '{"port": "' + str(port) + '", "state": "open"}'
     finally:
@@ -44,14 +44,15 @@ async def is_valid_host(address):
 
 async def check_request(address, start_port, end_port):
     if not start_port.isdecimal() or not end_port.isdecimal():
-        await handle_error('The start port or end port is not a number')
+        await handle_error('The start port or end port is not a number.')
     if not is_valid_tcp_upd_port(int(start_port)):
-        await handle_error('The start port is out of range')
+        await handle_error('The start port is out of range.')
     if not is_valid_tcp_upd_port(int(end_port)):
-        await handle_error('The end port is out of range')
-#TODO check a < b
+        await handle_error('The end port is out of range.')
+    if start_port > end_port:
+        await handle_error('The start port is larger than the end port.')
     if not await is_valid_host(address):
-        await handle_error('The address or hostname wrong')
+        await handle_error('The address or hostname wrong.')
 
 
 async def get_handler(request):
@@ -79,10 +80,13 @@ async def get_handler(request):
 
 if __name__ == "__main__":
     event_loop = asyncio.get_event_loop()
-    event_loop.set_debug(True)
     app = web.Application()
     app.router.add_get('/{address}/{start_port}/{end_port}', get_handler)
-    logging.basicConfig(level=logging.DEBUG, handlers=[SysLogHandler(address='/dev/log'), SysLogHandler()])
+# Debug environment
+    event_loop.set_debug(True)
+    logging.basicConfig(level=logging.DEBUG)
+# End debug environment
+    # logging.basicConfig(level=logging.INFO, handlers=[SysLogHandler(address='/dev/log'), SysLogHandler()])
     logging.info('port_scanner_srv: start')
     web.run_app(app, access_log_format='port_scanner_srv: %a %t "%r" %s %b "%{Referer}i" "%{User-Agent}i"')
     logging.info('port_scanner_srv: stop')
