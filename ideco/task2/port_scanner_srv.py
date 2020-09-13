@@ -21,7 +21,7 @@ async def scan_port(address, port):
     except (asyncio.TimeoutError, ConnectionRefusedError):
         result = '{"port": ' + str(port) + ', "state": "close"}'
     except socket.error as msg:
-        await handle_error('socket.error ' + msg)
+        await handle_error('socket.error ' + str(msg))
     else:
         result = '{"port": ' + str(port) + ', "state": "open"}'
     finally:
@@ -29,20 +29,7 @@ async def scan_port(address, port):
     return result
 
 
-async def is_valid_host(address):
-    check_ip4 = is_valid_ipv4_address(address)
-    check_ip6 = is_valid_ipv6_address(address)
-    resolver = aiodns.DNSResolver(loop=event_loop)
-    try:
-        await resolver.gethostbyname(address, socket.AF_INET)
-    except aiodns.error.DNSError:
-        check_dns = False
-    else:
-        check_dns = True
-    return check_ip4 or check_ip6 or check_dns
-
-
-async def check_request(address, start_port, end_port):
+async def check_ports(start_port, end_port):
     if not start_port.isdecimal() or not end_port.isdecimal():
         await handle_error('The start port or end port is not a number.')
     if not is_valid_tcp_upd_port(int(start_port)):
@@ -51,15 +38,25 @@ async def check_request(address, start_port, end_port):
         await handle_error('The end port is out of range.')
     if start_port > end_port:
         await handle_error('The start port is larger than the end port.')
-    if not await is_valid_host(address):
-        await handle_error('The address or hostname wrong.')
+
+
+async def resolve_and_check_address(address):
+    if is_valid_ipv4_address(address) or is_valid_ipv6_address(address):
+        return address
+    resolver = aiodns.DNSResolver(loop=event_loop)
+    try:
+        resolved_result = await resolver.gethostbyname(address, socket.AF_INET)
+    except aiodns.error.DNSError as msg:
+        await handle_error('The address or hostname is wrong. ' + str(msg))
+    else:
+        return resolved_result.addresses[0]
 
 
 async def get_handler(request):
-    address = request.match_info.get('address')
+    address = await resolve_and_check_address(request.match_info.get('address'))
     start_port = request.match_info.get('start_port')
     end_port = request.match_info.get('end_port')
-    await check_request(address, start_port, end_port)
+    await check_ports(start_port, end_port)
     response = web.StreamResponse()
     response.headers['Content-Type'] = 'application/json'
     futures = [scan_port(address, port)
