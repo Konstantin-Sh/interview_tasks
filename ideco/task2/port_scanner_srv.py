@@ -2,6 +2,7 @@ import asyncio
 import socket
 import logging
 import aiodns
+import resource
 from aiohttp import web
 from logging.handlers import SysLogHandler
 from request_checkers import (is_valid_tcp_upd_port,
@@ -52,11 +53,20 @@ async def resolve_and_check_address(address):
         return resolved_result.addresses[0]
 
 
+async def increase_open_file_limit():
+    MAX_PORT_NUMBER = 65535
+    soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
+    if MAX_PORT_NUMBER + 1 >= soft:
+        if (MAX_PORT_NUMBER + 1) * 3 < hard:
+            resource.setrlimit(resource.RLIMIT_NOFILE, ((MAX_PORT_NUMBER + 1) * 3, hard))
+
+
 async def get_handler(request):
     address = await resolve_and_check_address(request.match_info.get('address'))
     start_port = request.match_info.get('start_port')
     end_port = request.match_info.get('end_port')
     await check_ports(start_port, end_port)
+    await increase_open_file_limit()
     response = web.StreamResponse()
     response.headers['Content-Type'] = 'application/json'
     futures = [scan_port(address, port)
