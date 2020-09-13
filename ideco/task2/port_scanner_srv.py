@@ -73,6 +73,7 @@ async def get_handler(request):
     await check_ports(start_port, end_port)
     await increase_open_file_limit()
     response = web.StreamResponse()
+    response.enable_chunked_encoding()
     response.headers['Content-Type'] = 'application/json'
     futures = [scan_port(event_loop, address, port)
                for port in range(int(start_port), int(end_port) + 1)]
