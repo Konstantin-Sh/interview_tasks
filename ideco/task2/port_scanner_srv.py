@@ -19,11 +19,11 @@ async def scan_port(address, port):
     try:
         await asyncio.wait_for(connect, timeout=10, loop=event_loop)
     except (asyncio.TimeoutError, ConnectionRefusedError):
-        result = '{"port": "' + str(port) + '", "state": "close"}'
+        result = '{"port": ' + str(port) + ', "state": "close"}'
     except socket.error as msg:
         await handle_error('socket.error ' + msg)
     else:
-        result = '{"port": "' + str(port) + '", "state": "open"}'
+        result = '{"port": ' + str(port) + ', "state": "open"}'
     finally:
         connect.close()
     return result
