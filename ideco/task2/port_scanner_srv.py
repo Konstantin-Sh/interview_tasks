@@ -33,9 +33,10 @@ async def scan_port(event_loop, address, port):
 async def check_ports(start_port, end_port):
     if not start_port.isdecimal() or not end_port.isdecimal():
         await handle_error('The start port or end port is not a number.')
-    if not is_valid_tcp_upd_port(int(start_port)):
+    start_port, end_port = int(start_port), int(end_port)
+    if not is_valid_tcp_upd_port(start_port):
         await handle_error('The start port is out of range.')
-    if not is_valid_tcp_upd_port(int(end_port)):
+    if not is_valid_tcp_upd_port(end_port):
         await handle_error('The end port is out of range.')
     if start_port > end_port:
         await handle_error('The start port is larger than the end port.')
