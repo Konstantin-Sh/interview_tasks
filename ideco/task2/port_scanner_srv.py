@@ -56,7 +56,7 @@ async def resolve_and_check_address(address):
 async def increase_open_file_limit():
     MAX_PORT_NUMBER = 65535
     soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
-    if MAX_PORT_NUMBER + 1 >= soft:
+    if (MAX_PORT_NUMBER + 1) * 3 > soft:
         if (MAX_PORT_NUMBER + 1) * 3 < hard:
             resource.setrlimit(resource.RLIMIT_NOFILE, ((MAX_PORT_NUMBER + 1) * 3, hard))
 
