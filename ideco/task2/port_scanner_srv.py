@@ -15,7 +15,7 @@ async def handle_error(msg):
     raise web.HTTPBadRequest(reason=msg)
 
 
-async def scan_port(address, port):
+async def scan_port(event_loop, address, port):
     connect = asyncio.open_connection(address, port, loop=event_loop)
     try:
         await asyncio.wait_for(connect, timeout=10, loop=event_loop)
@@ -41,7 +41,7 @@ async def check_ports(start_port, end_port):
         await handle_error('The start port is larger than the end port.')
 
 
-async def resolve_and_check_address(address):
+async def resolve_and_check_address(event_loop, address):
     if is_valid_ipv4_address(address) or is_valid_ipv6_address(address):
         return address
     resolver = aiodns.DNSResolver(loop=event_loop)
@@ -62,14 +62,19 @@ async def increase_open_file_limit():
 
 
 async def get_handler(request):
-    address = await resolve_and_check_address(request.match_info.get('address'))
+    event_loop = asyncio.get_event_loop()
+    # Debug environment
+    event_loop.set_debug(True)
+    # End debug environment
+    address = await resolve_and_check_address(event_loop,
+                                              request.match_info.get('address'))
     start_port = request.match_info.get('start_port')
     end_port = request.match_info.get('end_port')
     await check_ports(start_port, end_port)
     await increase_open_file_limit()
     response = web.StreamResponse()
     response.headers['Content-Type'] = 'application/json'
-    futures = [scan_port(address, port)
+    futures = [scan_port(event_loop, address, port)
                for port in range(int(start_port), int(end_port) + 1)]
     first_element = True
     for future in asyncio.as_completed(futures):
@@ -86,11 +91,9 @@ async def get_handler(request):
 
 
 if __name__ == "__main__":
-    event_loop = asyncio.get_event_loop()
     app = web.Application()
     app.router.add_get('/{address}/{start_port}/{end_port}', get_handler)
 # Debug environment
-    event_loop.set_debug(True)
     logging.basicConfig(level=logging.DEBUG)
 # End debug environment
     # logging.basicConfig(level=logging.INFO, handlers=[SysLogHandler(address='/dev/log'), SysLogHandler()])
@@ -98,4 +101,3 @@ if __name__ == "__main__":
     web.run_app(app, access_log_format='port_scanner_srv: %a %t "%r" %s %b'
                                        ' "%{Referer}i" "%{User-Agent}i"')
     logging.info('port_scanner_srv: stop')
-    event_loop.close()
