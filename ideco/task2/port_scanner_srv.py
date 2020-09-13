@@ -91,15 +91,18 @@ async def get_handler(request):
     await response.write_eof()
     return response
 
-
-if __name__ == "__main__":
+def main():
     app = web.Application()
     app.router.add_get('/{address}/{start_port}/{end_port}', get_handler)
-# Debug environment
+    # Debug environment
     logging.basicConfig(level=logging.DEBUG)
-# End debug environment
+    # End debug environment
     # logging.basicConfig(level=logging.INFO, handlers=[SysLogHandler(address='/dev/log'), SysLogHandler()])
     logging.info('port_scanner_srv: start')
     web.run_app(app, access_log_format='port_scanner_srv: %a %t "%r" %s %b'
                                        ' "%{Referer}i" "%{User-Agent}i"')
     logging.info('port_scanner_srv: stop')
+
+
+if __name__ == "__main__":
+    main()
