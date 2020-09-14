@@ -65,7 +65,7 @@ async def increase_open_file_limit():
 async def get_handler(request):
     event_loop = asyncio.get_event_loop()
     # Debug environment
-    event_loop.set_debug(True)
+    # event_loop.set_debug(True)
     # End debug environment
     address = await resolve_and_check_address(event_loop,
                                               request.match_info.get('address'))
@@ -95,9 +95,9 @@ def main():
     app = web.Application()
     app.router.add_get('/{address}/{start_port}/{end_port}', get_handler)
     # Debug environment
-    logging.basicConfig(level=logging.DEBUG)
+    # logging.basicConfig(level=logging.DEBUG)
     # End debug environment
-    # logging.basicConfig(level=logging.INFO, handlers=[SysLogHandler(address='/dev/log'), SysLogHandler()])
+    logging.basicConfig(level=logging.INFO, handlers=[SysLogHandler(address='/dev/log'), SysLogHandler()])
     logging.info('port_scanner_srv: start')
     web.run_app(app, access_log_format='port_scanner_srv: %a %t "%r" %s %b'
                                        ' "%{Referer}i" "%{User-Agent}i"')
