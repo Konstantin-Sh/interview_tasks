@@ -1,1 +1,4 @@
 __pycache__
+port_scanner_srv.egg-info
+dist
+build
