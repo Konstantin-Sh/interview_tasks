@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 
 setup(
-    name="port_scanner_srv",
+    name="python3-port_scanner_srv",
     version="0.0.1",
     packages=find_packages(),
     install_requires=["aiodns~=2.0.0", "aiohttp>=3.2.0"],
