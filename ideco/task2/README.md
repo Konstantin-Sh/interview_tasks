@@ -1,3 +1,36 @@
+Below is a task: Port Scanner.
+
+It is required to develop a web application for scanning open TCP ports on a remote host.
+
+The application must implement the following REST API:
+
+GET /scan//<begin_port>/<end_port>
+
+Parameters:
+
+    # ip - host to be scanned
+    
+    # begin_port - start of port range to scan
+    
+    # end_port - end of port range to scan
+
+Handler for this url - starts scanning the specified host, and gives information to the client. In JSON format (can be in parts).
+
+Response format: [{"port": "integer", "state": "(open|close)"}]
+
+Program requirements: Aiohttp (>= 3.2.0), Python3.5 or higher;
+
+the presence of application operation logs - incoming requests, errors, etc. Logging must be done in syslog.
+
+It will be a plus: the presence of tests (AioHTTPTestCase), not necessary but desirable;
+
+a ready-made spec file for building an RPM package with the program.
+
+Preferred implementation: Fedora 31 system image.
+
+Result: code hosted on a git repository (eg github).
+
+In Russian:
 Ниже тестовое задание: 
 Сканер портов
 Требуется разработать web-приложение для сканирования открытых TCP поротв удаленного хоста.
